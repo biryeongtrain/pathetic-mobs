@@ -12,7 +12,7 @@ public final class FabricNavigationPoint implements NavigationPoint {
 	public FabricNavigationPoint(PathType pathType, float malus) {
 		this.pathType = pathType;
 		this.malus = malus;
-		this.cost = malus == 0.0F ? Cost.ZERO : Cost.of(malus);
+		this.cost = malus <= 0.0F ? Cost.ZERO : Cost.of(malus);
 	}
 
 	@Override

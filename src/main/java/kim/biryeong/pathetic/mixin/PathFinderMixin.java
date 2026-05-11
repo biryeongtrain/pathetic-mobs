@@ -37,7 +37,8 @@ public class PathFinderMixin {
 		}
 
 		BlockPos target = targets.iterator().next();
-		Path path = PatheticPathfinding.findGroundPath(region, mob, walkNodeEvaluator, target, accuracy);
+		int maxPathLength = Math.max(1, (int) Math.ceil(maxRange));
+		Path path = PatheticPathfinding.findGroundPath(region, mob, walkNodeEvaluator, target, maxPathLength);
 		if (path != null) {
 			cir.setReturnValue(path);
 		}
