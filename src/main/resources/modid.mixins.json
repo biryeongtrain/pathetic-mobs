@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "com.example.mixin",
+	"package": "kim.biryeong.pathetic.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin"
+		"PathFinderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

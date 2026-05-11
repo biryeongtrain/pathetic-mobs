@@ -1,33 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "pathetic-impl",
 	"version": "${version}",
-	"name": "Example Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Pathetic Implementation",
+	"description": "Fabric integration for Pathetic mob pathfinding.",
 	"authors": [
-		"Me!"
+		"biryeongtrain06"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://biryeong.kim",
+		"sources": "https://github.com/biryeongtrain/pathetic-implementation"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/modid/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
-		],
-		"client": [
-			"com.example.client.ExampleModClient"
+			"kim.biryeong.pathetic.PatheticImplInitializer"
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
-		{
-			"config": "modid.client.mixins.json",
-			"environment": "client"
-		}
+		"modid.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.2",
