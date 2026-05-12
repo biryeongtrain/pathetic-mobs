@@ -2,6 +2,7 @@ package kim.biryeong.pathetic.mixin;
 
 import java.util.Set;
 import kim.biryeong.pathetic.pathfinding.PatheticPathfinding;
+import kim.biryeong.pathetic.pathfinding.PathfindingBenchmarkControl;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.PathNavigationRegion;
@@ -22,7 +23,7 @@ public class PathFinderMixin {
 	@Final
 	private NodeEvaluator nodeEvaluator;
 
-	@Inject(method = "findPath", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "findPath(Lnet/minecraft/world/level/PathNavigationRegion;Lnet/minecraft/world/entity/Mob;Ljava/util/Set;FIF)Lnet/minecraft/world/level/pathfinder/Path;", at = @At("HEAD"), cancellable = true)
 	private void pathetic$findPath(
 			PathNavigationRegion region,
 			Mob mob,
@@ -32,6 +33,10 @@ public class PathFinderMixin {
 			float searchDepthMultiplier,
 			CallbackInfoReturnable<Path> cir
 	) {
+		if (PathfindingBenchmarkControl.isPatheticDisabled()) {
+			return;
+		}
+
 		if (!(nodeEvaluator instanceof WalkNodeEvaluator walkNodeEvaluator) || targets.size() != 1) {
 			return;
 		}

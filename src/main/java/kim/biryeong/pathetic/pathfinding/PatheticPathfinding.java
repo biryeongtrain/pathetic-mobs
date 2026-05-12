@@ -28,36 +28,41 @@ public final class PatheticPathfinding {
 			BlockPos target,
 			int maxPathLength
 	) {
-		FabricNavigationPointProvider provider = new FabricNavigationPointProvider();
-		FabricEnvironmentContext context = new FabricEnvironmentContext(region, mob, evaluator);
-		PathfinderConfiguration configuration = PathfinderConfiguration.builder()
-				.provider(provider)
-				.async(false)
-				.fallback(false)
-				.maxIterations(100_000)
-				.maxLength(maxPathLength)
-				.neighborStrategy(NeighborStrategies.VERTICAL_AND_HORIZONTAL)
-				.nodeValidationProcessors(List.of(evaluation -> {
-					FabricNavigationPoint point =
-							provider.pointAt(evaluation.getCurrentPathPosition(), context);
-					return point.isTraversable();
-				}))
-				.nodeCostProcessors(List.of(evaluation -> {
-					FabricNavigationPoint point =
-							provider.pointAt(evaluation.getCurrentPathPosition(), context);
-					return point.cost();
-				}))
-				.build();
+		evaluator.prepare(region, mob);
+		try {
+			FabricNavigationPointProvider provider = new FabricNavigationPointProvider();
+			FabricEnvironmentContext context = new FabricEnvironmentContext(region, mob, evaluator);
+			PathfinderConfiguration configuration = PathfinderConfiguration.builder()
+					.provider(provider)
+					.async(false)
+					.fallback(false)
+					.maxIterations(100_000)
+					.maxLength(maxPathLength)
+					.neighborStrategy(NeighborStrategies.VERTICAL_AND_HORIZONTAL)
+					.nodeValidationProcessors(List.of(evaluation -> {
+						FabricNavigationPoint point =
+								provider.pointAt(evaluation.getCurrentPathPosition(), context);
+						return point.isTraversable();
+					}))
+					.nodeCostProcessors(List.of(evaluation -> {
+						FabricNavigationPoint point =
+								provider.pointAt(evaluation.getCurrentPathPosition(), context);
+						return point.cost();
+					}))
+					.build();
 
-		Pathfinder pathfinder = FACTORY.createPathfinder(configuration);
-		PathPosition start = PathPosition.of(mob.getX(), mob.getY(), mob.getZ());
-		PathPosition end = PathPosition.of(target.getX(), target.getY(), target.getZ());
-		PathfinderResult result = pathfinder.findPath(start, end, context).resultBlocking();
-		if (result == null || !result.successful() || result.getPath() == null || result.getPath().length() <= 1) {
-			return null;
+			Pathfinder pathfinder = FACTORY.createPathfinder(configuration);
+			PathPosition start = PathPosition.of(mob.getX(), mob.getY(), mob.getZ());
+			PathPosition end = PathPosition.of(target.getX(), target.getY(), target.getZ());
+			PathfinderResult result = pathfinder.findPath(start, end, context).resultBlocking();
+			if (result == null || !result.successful() || result.getPath() == null || result.getPath().length() <= 1) {
+				return null;
+			}
+
+			return toMinecraftPath(result.getPath(), target);
+		} finally {
+			evaluator.done();
 		}
-
-		return toMinecraftPath(result.getPath(), target);
 	}
 
 	private static Path toMinecraftPath(de.bsommerfeld.pathetic.api.pathing.result.Path patheticPath, BlockPos target) {
