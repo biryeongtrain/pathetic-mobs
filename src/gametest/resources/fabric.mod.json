@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "pathetic-impl-test",
+	"id": "pathetic-mod-test",
 	"version": "1.0.0",
 	"name": "Pathetic Implementation Game Tests",
 	"environment": "*",
@@ -11,6 +11,6 @@
 	},
 	"depends": {
 		"fabric-gametest-api-v1": "*",
-		"pathetic-impl": "*"
+		"pathetic-mobs": "*"
 	}
 }
