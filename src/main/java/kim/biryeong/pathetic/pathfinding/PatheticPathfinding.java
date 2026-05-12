@@ -36,6 +36,11 @@ public final class PatheticPathfinding {
 	) {
 		FabricNavigationPointProvider provider = new FabricNavigationPointProvider();
 		FabricEnvironmentContext context = new FabricEnvironmentContext(region);
+		Path directPath = findDirectGroundPath(provider, context, mob.blockPosition(), target);
+		if (directPath != null) {
+			return directPath;
+		}
+
 		PathfinderConfiguration configuration = PathfinderConfiguration.builder()
 				.provider(provider)
 				.async(false)
@@ -64,6 +69,46 @@ public final class PatheticPathfinding {
 		}
 
 		return toMinecraftPath(result.getPath(), target);
+	}
+
+	private static Path findDirectGroundPath(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			BlockPos start,
+			BlockPos target
+	) {
+		if (start.getY() != target.getY()) {
+			return null;
+		}
+
+		int deltaX = target.getX() - start.getX();
+		int deltaZ = target.getZ() - start.getZ();
+		int steps = Math.max(Math.abs(deltaX), Math.abs(deltaZ));
+		if (steps == 0) {
+			return null;
+		}
+
+		List<Node> nodes = new ArrayList<>(steps);
+		Node previous = null;
+		for (int i = 1; i <= steps; i++) {
+			int x = start.getX() + Math.round((float) deltaX * (float) i / (float) steps);
+			int z = start.getZ() + Math.round((float) deltaZ * (float) i / (float) steps);
+			FabricNavigationPoint point = provider.pointAt(PathPosition.of(x, start.getY(), z), context);
+			if (!point.isTraversable() || point.cost().value() > 0.0D) {
+				return null;
+			}
+
+			Node node = new Node(x, start.getY(), z);
+			if (previous == null || previous.x != node.x || previous.y != node.y || previous.z != node.z) {
+				nodes.add(node);
+				previous = node;
+			}
+		}
+
+		if (nodes.isEmpty()) {
+			return null;
+		}
+		return new Path(nodes, target, true);
 	}
 
 	private static Path toMinecraftPath(de.bsommerfeld.pathetic.api.pathing.result.Path patheticPath, BlockPos target) {
