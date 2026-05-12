@@ -1,7 +1,7 @@
 {
 	"required": true,
 	"package": "kim.biryeong.pathetic.mixin",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"PathFinderMixin"
 	],

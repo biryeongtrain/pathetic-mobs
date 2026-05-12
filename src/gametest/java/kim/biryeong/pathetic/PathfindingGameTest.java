@@ -9,6 +9,7 @@ import kim.biryeong.pathetic.pathfinding.PathfindingBenchmarkControl;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
@@ -115,9 +116,9 @@ public class PathfindingGameTest {
 		double medianRatio = ratio(patheticMedian, vanillaMedian);
 		double p95Ratio = ratio(patheticP95, vanillaP95);
 
-		helper.assertTrue(Double.isFinite(medianRatio), "Expected a finite median ratio.");
-		helper.assertTrue(vanillaNodes > 1, "Expected vanilla path to contain movement nodes.");
-		helper.assertTrue(patheticNodes > 1, "Expected Pathetic path to contain movement nodes.");
+		helper.assertTrue(Double.isFinite(medianRatio), Component.literal("Expected a finite median ratio."));
+		helper.assertTrue(vanillaNodes > 1, Component.literal("Expected vanilla path to contain movement nodes."));
+		helper.assertTrue(patheticNodes > 1, Component.literal("Expected Pathetic path to contain movement nodes."));
 		LOGGER.info(
 				"pathfinding_benchmark scenario={} samples={} warmups={} vanillaMedianNs={} patheticMedianNs={} medianRatio={} vanillaP95Ns={} patheticP95Ns={} p95Ratio={} vanillaNodes={} patheticNodes={}",
 				scenario.name(),
@@ -251,7 +252,7 @@ public class PathfindingGameTest {
 			int targetX,
 			int targetZ
 	) {
-		Mob mob = helper.spawn(EntityType.ZOMBIE, mobX, 1, mobZ, EntitySpawnReason.TRIGGERED);
+		Mob mob = helper.spawn(EntityType.ZOMBIE, mobX, 1, mobZ);
 		BlockPos target = helper.absolutePos(new BlockPos(targetX, 1, targetZ));
 		return new BenchmarkScenario(name, mob, target);
 	}
@@ -272,8 +273,8 @@ public class PathfindingGameTest {
 		long elapsedNanos = System.nanoTime() - startNanos;
 
 		String engine = vanilla ? "vanilla" : "pathetic";
-		helper.assertTrue(path != null, "Expected a path to be created for " + scenarioName + " using " + engine + ".");
-		helper.assertTrue(path.getNodeCount() > 1, "Expected " + scenarioName + " path to contain movement nodes.");
+		helper.assertTrue(path != null, Component.literal("Expected a path to be created for " + scenarioName + " using " + engine + "."));
+		helper.assertTrue(path.getNodeCount() > 1, Component.literal("Expected " + scenarioName + " path to contain movement nodes."));
 		return new PathSample(elapsedNanos, path.getNodeCount());
 	}
 
