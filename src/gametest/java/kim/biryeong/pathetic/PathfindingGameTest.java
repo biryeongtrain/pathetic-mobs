@@ -5,6 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import de.bsommerfeld.pathetic.api.wrapper.PathPosition;
+import kim.biryeong.pathetic.pathfinding.FabricEnvironmentContext;
+import kim.biryeong.pathetic.pathfinding.FabricNavigationPoint;
+import kim.biryeong.pathetic.pathfinding.FabricNavigationPointProvider;
 import kim.biryeong.pathetic.pathfinding.PathfindingBenchmarkControl;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -13,8 +17,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.level.PathNavigationRegion;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.pathfinder.PathType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +78,93 @@ public class PathfindingGameTest {
 	@GameTest
 	public void courtyardBacktrackPathfindingBenchmark(GameTestHelper helper) {
 		runScenarioBenchmark(helper, courtyardBacktrack(helper));
+	}
+
+	@GameTest
+	public void mobSpecificHazardPenaltyClassification(GameTestHelper helper) {
+		helper.runAfterDelay(2, () -> {
+			fillPlatform(helper, 0, 0, 3, 3);
+			helper.setBlock(new BlockPos(1, 0, 1), Blocks.MAGMA_BLOCK);
+
+			Mob zombie = helper.spawn(EntityType.ZOMBIE, 0, 1, 0, EntitySpawnReason.TRIGGERED);
+			Mob warden = helper.spawn(EntityType.WARDEN, 3, 1, 3, EntitySpawnReason.TRIGGERED);
+			helper.assertTrue(
+					zombie.getPathfindingMalus(PathType.FIRE) > 0.0F,
+					"Expected zombie to avoid direct fire damage path types."
+			);
+			helper.assertTrue(
+					warden.getPathfindingMalus(PathType.FIRE) == 0.0F,
+					"Expected warden to ignore direct fire damage path types."
+			);
+
+			PathNavigationRegion region = new PathNavigationRegion(
+					helper.getLevel(),
+					helper.absolutePos(new BlockPos(0, 0, 0)),
+					helper.absolutePos(new BlockPos(3, 4, 3))
+			);
+			BlockPos sample = helper.absolutePos(new BlockPos(1, 1, 1));
+			PathPosition samplePosition = PathPosition.of(sample.getX(), sample.getY(), sample.getZ());
+
+			FabricNavigationPoint zombiePoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, zombie));
+			FabricNavigationPoint wardenPoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, warden));
+
+			helper.assertTrue(zombiePoint.isTraversable(), "Expected zombie magma floor to stay traversable with a penalty.");
+			helper.assertTrue(zombiePoint.cost().value() > 0.0D, "Expected zombie magma floor to carry a penalty.");
+			helper.assertTrue(wardenPoint.isTraversable(), "Expected warden magma floor to stay traversable.");
+			helper.assertTrue(wardenPoint.cost().value() == 0.0D, "Expected warden magma floor penalty to be ignored.");
+			helper.succeed();
+		});
+	}
+
+	@GameTest
+	public void babyMobDoesNotRequireHeadClearance(GameTestHelper helper) {
+		helper.runAfterDelay(2, () -> {
+			fillPlatform(helper, 0, 0, 3, 3);
+			helper.setBlock(new BlockPos(1, 2, 1), Blocks.STONE);
+
+			Mob baby = helper.spawn(EntityType.ZOMBIE, 0, 1, 0, EntitySpawnReason.TRIGGERED);
+			baby.setBaby(true);
+			Mob adult = helper.spawn(EntityType.ZOMBIE, 3, 1, 3, EntitySpawnReason.TRIGGERED);
+
+			PathNavigationRegion region = region(helper, 0, 0, 0, 3, 4, 3);
+			PathPosition samplePosition = pathPosition(helper, 1, 1, 1);
+			FabricNavigationPoint babyPoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, baby));
+			FabricNavigationPoint adultPoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, adult));
+
+			helper.assertTrue(baby.getBbHeight() < 1.0F, "Expected baby zombie to be shorter than one block.");
+			helper.assertTrue(adult.getBbHeight() > 1.0F, "Expected adult zombie to require head clearance.");
+			helper.assertTrue(babyPoint.isTraversable(), "Expected baby zombie to fit under one-block overhead clearance.");
+			helper.assertTrue(!adultPoint.isTraversable(), "Expected adult zombie to be blocked by head-level stone.");
+			helper.succeed();
+		});
+	}
+
+	@GameTest
+	public void largeMobRequiresFullFootprintClearance(GameTestHelper helper) {
+		helper.runAfterDelay(2, () -> {
+			fillPlatform(helper, 0, 0, 5, 5);
+			helper.setBlock(new BlockPos(3, 1, 2), Blocks.STONE);
+
+			Mob golem = helper.spawn(EntityType.IRON_GOLEM, 0, 1, 0, EntitySpawnReason.TRIGGERED);
+			Mob zombie = helper.spawn(EntityType.ZOMBIE, 5, 1, 5, EntitySpawnReason.TRIGGERED);
+
+			PathNavigationRegion region = region(helper, 0, 0, 0, 5, 5, 5);
+			PathPosition samplePosition = pathPosition(helper, 2, 1, 2);
+			FabricNavigationPoint golemPoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, golem));
+			FabricNavigationPoint zombiePoint = new FabricNavigationPointProvider()
+					.pointAt(samplePosition, new FabricEnvironmentContext(region, zombie));
+
+			helper.assertTrue(golem.getBbWidth() > 1.0F, "Expected iron golem to require a wider footprint.");
+			helper.assertTrue(golem.getBbHeight() > 2.0F, "Expected iron golem to require more than two vertical blocks.");
+			helper.assertTrue(!golemPoint.isTraversable(), "Expected iron golem to be blocked by side-footprint stone.");
+			helper.assertTrue(zombiePoint.isTraversable(), "Expected normal zombie to ignore side-footprint stone at this point.");
+			helper.succeed();
+		});
 	}
 
 	private static void runScenarioBenchmark(GameTestHelper helper, BenchmarkScenario scenario) {
@@ -237,6 +330,27 @@ public class PathfindingGameTest {
 				helper.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
 			}
 		}
+	}
+
+	private static PathNavigationRegion region(
+			GameTestHelper helper,
+			int startX,
+			int startY,
+			int startZ,
+			int endX,
+			int endY,
+			int endZ
+	) {
+		return new PathNavigationRegion(
+				helper.getLevel(),
+				helper.absolutePos(new BlockPos(startX, startY, startZ)),
+				helper.absolutePos(new BlockPos(endX, endY, endZ))
+		);
+	}
+
+	private static PathPosition pathPosition(GameTestHelper helper, int x, int y, int z) {
+		BlockPos sample = helper.absolutePos(new BlockPos(x, y, z));
+		return PathPosition.of(sample.getX(), sample.getY(), sample.getZ());
 	}
 
 	private static void setTwoHighWall(GameTestHelper helper, int x, int z) {

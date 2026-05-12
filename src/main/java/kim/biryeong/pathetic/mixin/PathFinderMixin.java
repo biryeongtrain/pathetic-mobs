@@ -1,6 +1,7 @@
 package kim.biryeong.pathetic.mixin;
 
 import java.util.Set;
+import kim.biryeong.pathetic.pathfinding.PathfindingDebugMetrics;
 import kim.biryeong.pathetic.pathfinding.PatheticPathfinding;
 import kim.biryeong.pathetic.pathfinding.PathfindingBenchmarkControl;
 import net.minecraft.core.BlockPos;
@@ -33,11 +34,14 @@ public class PathFinderMixin {
 			float searchDepthMultiplier,
 			CallbackInfoReturnable<Path> cir
 	) {
+		PathfindingDebugMetrics.begin(mob, targets);
 		if (PathfindingBenchmarkControl.isPatheticDisabled(mob)) {
+			PathfindingDebugMetrics.markVanilla("disabled");
 			return;
 		}
 
 		if (!(nodeEvaluator instanceof WalkNodeEvaluator) || targets.size() != 1) {
+			PathfindingDebugMetrics.markVanilla("unsupported");
 			return;
 		}
 
@@ -45,7 +49,23 @@ public class PathFinderMixin {
 		int maxPathLength = Math.max(1, (int) Math.ceil(maxRange));
 		Path path = PatheticPathfinding.findGroundPath(region, mob, target, maxPathLength);
 		if (path != null) {
+			PathfindingDebugMetrics.markPathetic();
 			cir.setReturnValue(path);
+		} else {
+			PathfindingDebugMetrics.markVanilla("fallback");
 		}
+	}
+
+	@Inject(method = "findPath(Lnet/minecraft/world/level/PathNavigationRegion;Lnet/minecraft/world/entity/Mob;Ljava/util/Set;FIF)Lnet/minecraft/world/level/pathfinder/Path;", at = @At("RETURN"))
+	private void pathetic$logPathfinding(
+			PathNavigationRegion region,
+			Mob mob,
+			Set<BlockPos> targets,
+			float maxRange,
+			int accuracy,
+			float searchDepthMultiplier,
+			CallbackInfoReturnable<Path> cir
+	) {
+		PathfindingDebugMetrics.finish(cir.getReturnValue());
 	}
 }
