@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "pathetic-impl",
+	"id": "pathetic-mobs",
 	"version": "${version}",
-	"name": "Pathetic Implementation",
+	"name": "Pathetic Mobs",
 	"description": "Fabric integration for Pathetic mob pathfinding.",
 	"authors": [
 		"biryeongtrain06"
