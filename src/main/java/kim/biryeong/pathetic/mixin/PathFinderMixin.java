@@ -33,7 +33,7 @@ public class PathFinderMixin {
 			float searchDepthMultiplier,
 			CallbackInfoReturnable<Path> cir
 	) {
-		if (PathfindingBenchmarkControl.isPatheticDisabled()) {
+		if (PathfindingBenchmarkControl.isPatheticDisabled(mob)) {
 			return;
 		}
 
