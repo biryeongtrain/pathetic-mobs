@@ -26,7 +26,10 @@ public class PathfindingGameTest {
 			"flat_wide",
 			"wall_detour",
 			"hazard_avoid",
-			"narrow_corridor"
+			"narrow_corridor",
+			"enclosed_goal_back_entrance",
+			"two_gate_hazard_detour",
+			"courtyard_backtrack"
 	);
 	private static final Map<String, BenchmarkResult> COMPLETED_RESULTS = new LinkedHashMap<>();
 
@@ -53,6 +56,21 @@ public class PathfindingGameTest {
 	@GameTest
 	public void narrowCorridorPathfindingBenchmark(GameTestHelper helper) {
 		runScenarioBenchmark(helper, narrowCorridor(helper));
+	}
+
+	@GameTest
+	public void enclosedGoalBackEntrancePathfindingBenchmark(GameTestHelper helper) {
+		runScenarioBenchmark(helper, enclosedGoalBackEntrance(helper));
+	}
+
+	@GameTest
+	public void twoGateHazardDetourPathfindingBenchmark(GameTestHelper helper) {
+		runScenarioBenchmark(helper, twoGateHazardDetour(helper));
+	}
+
+	@GameTest
+	public void courtyardBacktrackPathfindingBenchmark(GameTestHelper helper) {
+		runScenarioBenchmark(helper, courtyardBacktrack(helper));
 	}
 
 	private static void runScenarioBenchmark(GameTestHelper helper, BenchmarkScenario scenario) {
@@ -155,6 +173,61 @@ public class PathfindingGameTest {
 		return scenario(helper, "narrow_corridor", 1, 1, 7, 1);
 	}
 
+	private static BenchmarkScenario enclosedGoalBackEntrance(GameTestHelper helper) {
+		fillPlatform(helper, 0, 0, 10, 4);
+		for (int x = 6; x <= 8; x++) {
+			for (int z = 1; z <= 3; z++) {
+				if (x == 7 && z == 2) {
+					continue;
+				}
+				if (x == 8 && z == 2) {
+					continue;
+				}
+				if (x == 6 || x == 8 || z == 1 || z == 3) {
+					setTwoHighWall(helper, x, z);
+				}
+			}
+		}
+		return scenario(helper, "enclosed_goal_back_entrance", 1, 2, 7, 2);
+	}
+
+	private static BenchmarkScenario twoGateHazardDetour(GameTestHelper helper) {
+		fillPlatform(helper, 0, 0, 12, 6);
+		for (int z = 0; z <= 4; z++) {
+			setTwoHighWall(helper, 4, z);
+		}
+		for (int z = 2; z <= 6; z++) {
+			setTwoHighWall(helper, 8, z);
+		}
+		for (int x = 5; x <= 8; x++) {
+			helper.setBlock(new BlockPos(x, 0, 3), Blocks.MAGMA_BLOCK);
+		}
+		return scenario(helper, "two_gate_hazard_detour", 1, 3, 11, 3);
+	}
+
+	private static BenchmarkScenario courtyardBacktrack(GameTestHelper helper) {
+		fillPlatform(helper, 0, 0, 12, 8);
+		for (int x = 5; x <= 11; x++) {
+			setTwoHighWall(helper, x, 1);
+			setTwoHighWall(helper, x, 7);
+		}
+		for (int z = 1; z <= 7; z++) {
+			setTwoHighWall(helper, 5, z);
+			if (z != 4) {
+				setTwoHighWall(helper, 11, z);
+			}
+		}
+		for (int z = 2; z <= 6; z++) {
+			if (z != 6) {
+				setTwoHighWall(helper, 8, z);
+			}
+		}
+		for (int x = 6; x <= 8; x++) {
+			helper.setBlock(new BlockPos(x, 0, 4), Blocks.MAGMA_BLOCK);
+		}
+		return scenario(helper, "courtyard_backtrack", 1, 4, 7, 4);
+	}
+
 	private static void fillPlatform(GameTestHelper helper, int xStart, int zStart, int xEnd, int zEnd) {
 		for (int x = xStart; x <= xEnd; x++) {
 			for (int z = zStart; z <= zEnd; z++) {
@@ -163,6 +236,11 @@ public class PathfindingGameTest {
 				helper.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
 			}
 		}
+	}
+
+	private static void setTwoHighWall(GameTestHelper helper, int x, int z) {
+		helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+		helper.setBlock(new BlockPos(x, 2, z), Blocks.STONE);
 	}
 
 	private static BenchmarkScenario scenario(
