@@ -11,10 +11,10 @@ Fabric 환경에서 Minecraft mob pathfinding 일부를 [Pathetic](https://githu
 
 ## 지원 환경
 
-- Minecraft `1.21.8`
+- Minecraft <= `26.1`
 - Fabric Loader `0.19.2`
-- Fabric API `0.136.1+1.21.8`
-- Java `21`
+- Fabric API `0.148.0+26.1.2`
+- Java `25`
 - Pathetic API/Engine `5.4.6`
 
 ## 동작 방식
