@@ -24,6 +24,7 @@ public final class PatheticPathfinding {
 			PathVector.of(0.0D, 0.0D, -1.0D)
 	);
 	private static final INeighborStrategy HORIZONTAL_CARDINAL = () -> HORIZONTAL_CARDINAL_OFFSETS;
+	private static final int MAX_FAST_DETOUR_OFFSET = 8;
 
 	private PatheticPathfinding() {
 	}
@@ -39,6 +40,11 @@ public final class PatheticPathfinding {
 		Path directPath = findDirectGroundPath(provider, context, mob.blockPosition(), target);
 		if (directPath != null) {
 			return directPath;
+		}
+
+		Path detourPath = findOrthogonalDetourGroundPath(provider, context, mob.blockPosition(), target, maxPathLength);
+		if (detourPath != null) {
+			return detourPath;
 		}
 
 		PathfinderConfiguration configuration = PathfinderConfiguration.builder()
@@ -109,6 +115,170 @@ public final class PatheticPathfinding {
 			return null;
 		}
 		return new Path(nodes, target, true);
+	}
+
+	private static Path findOrthogonalDetourGroundPath(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			BlockPos start,
+			BlockPos target,
+			int maxPathLength
+	) {
+		if (start.getY() != target.getY()) {
+			return null;
+		}
+
+		int deltaX = target.getX() - start.getX();
+		int deltaZ = target.getZ() - start.getZ();
+		if (deltaX == 0 && deltaZ == 0) {
+			return null;
+		}
+
+		if (Math.abs(deltaX) >= Math.abs(deltaZ)) {
+			Path xDetour = findZDetourPath(provider, context, start, target, maxPathLength);
+			if (xDetour != null) {
+				return xDetour;
+			}
+			return findXDetourPath(provider, context, start, target, maxPathLength);
+		}
+
+		Path zDetour = findXDetourPath(provider, context, start, target, maxPathLength);
+		if (zDetour != null) {
+			return zDetour;
+		}
+		return findZDetourPath(provider, context, start, target, maxPathLength);
+	}
+
+	private static Path findZDetourPath(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			BlockPos start,
+			BlockPos target,
+			int maxPathLength
+	) {
+		for (int offset = 1; offset <= MAX_FAST_DETOUR_OFFSET; offset++) {
+			Path positive = findWaypointGroundPath(
+					provider,
+					context,
+					start,
+					target,
+					maxPathLength,
+					new BlockPos(start.getX(), start.getY(), start.getZ() + offset),
+					new BlockPos(target.getX(), target.getY(), start.getZ() + offset)
+			);
+			if (positive != null) {
+				return positive;
+			}
+
+			Path negative = findWaypointGroundPath(
+					provider,
+					context,
+					start,
+					target,
+					maxPathLength,
+					new BlockPos(start.getX(), start.getY(), start.getZ() - offset),
+					new BlockPos(target.getX(), target.getY(), start.getZ() - offset)
+			);
+			if (negative != null) {
+				return negative;
+			}
+		}
+		return null;
+	}
+
+	private static Path findXDetourPath(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			BlockPos start,
+			BlockPos target,
+			int maxPathLength
+	) {
+		for (int offset = 1; offset <= MAX_FAST_DETOUR_OFFSET; offset++) {
+			Path positive = findWaypointGroundPath(
+					provider,
+					context,
+					start,
+					target,
+					maxPathLength,
+					new BlockPos(start.getX() + offset, start.getY(), start.getZ()),
+					new BlockPos(start.getX() + offset, target.getY(), target.getZ())
+			);
+			if (positive != null) {
+				return positive;
+			}
+
+			Path negative = findWaypointGroundPath(
+					provider,
+					context,
+					start,
+					target,
+					maxPathLength,
+					new BlockPos(start.getX() - offset, start.getY(), start.getZ()),
+					new BlockPos(start.getX() - offset, target.getY(), target.getZ())
+			);
+			if (negative != null) {
+				return negative;
+			}
+		}
+		return null;
+	}
+
+	private static Path findWaypointGroundPath(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			BlockPos start,
+			BlockPos target,
+			int maxPathLength,
+			BlockPos firstWaypoint,
+			BlockPos secondWaypoint
+	) {
+		List<Node> nodes = new ArrayList<>(Math.max(4, maxPathLength));
+		Node previous = null;
+		previous = appendClearSegment(provider, context, nodes, previous, start, firstWaypoint);
+		if (previous == null) {
+			return null;
+		}
+		previous = appendClearSegment(provider, context, nodes, previous, firstWaypoint, secondWaypoint);
+		if (previous == null) {
+			return null;
+		}
+		previous = appendClearSegment(provider, context, nodes, previous, secondWaypoint, target);
+		if (previous == null || nodes.size() > maxPathLength || nodes.isEmpty()) {
+			return null;
+		}
+		return new Path(nodes, target, true);
+	}
+
+	private static Node appendClearSegment(
+			FabricNavigationPointProvider provider,
+			FabricEnvironmentContext context,
+			List<Node> nodes,
+			Node previous,
+			BlockPos from,
+			BlockPos to
+	) {
+		int deltaX = Integer.compare(to.getX(), from.getX());
+		int deltaZ = Integer.compare(to.getZ(), from.getZ());
+		if (deltaX != 0 && deltaZ != 0) {
+			return null;
+		}
+
+		int steps = Math.abs(to.getX() - from.getX()) + Math.abs(to.getZ() - from.getZ());
+		for (int i = 1; i <= steps; i++) {
+			int x = from.getX() + deltaX * i;
+			int z = from.getZ() + deltaZ * i;
+			FabricNavigationPoint point = provider.pointAt(PathPosition.of(x, from.getY(), z), context);
+			if (!point.isTraversable() || point.cost().value() > 0.0D) {
+				return null;
+			}
+
+			Node node = new Node(x, from.getY(), z);
+			if (previous == null || previous.x != node.x || previous.y != node.y || previous.z != node.z) {
+				nodes.add(node);
+				previous = node;
+			}
+		}
+		return previous;
 	}
 
 	private static Path toMinecraftPath(de.bsommerfeld.pathetic.api.pathing.result.Path patheticPath, BlockPos target) {
