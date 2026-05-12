@@ -37,13 +37,13 @@ public class PathFinderMixin {
 			return;
 		}
 
-		if (!(nodeEvaluator instanceof WalkNodeEvaluator walkNodeEvaluator) || targets.size() != 1) {
+		if (!(nodeEvaluator instanceof WalkNodeEvaluator) || targets.size() != 1) {
 			return;
 		}
 
 		BlockPos target = targets.iterator().next();
 		int maxPathLength = Math.max(1, (int) Math.ceil(maxRange));
-		Path path = PatheticPathfinding.findGroundPath(region, mob, walkNodeEvaluator, target, maxPathLength);
+		Path path = PatheticPathfinding.findGroundPath(region, mob, target, maxPathLength);
 		if (path != null) {
 			cir.setReturnValue(path);
 		}
