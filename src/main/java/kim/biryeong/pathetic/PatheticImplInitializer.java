@@ -1,5 +1,6 @@
 package kim.biryeong.pathetic;
 
+import kim.biryeong.pathetic.pathfinding.PathfindingDebugMetrics;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ public class PatheticImplInitializer implements ModInitializer {
 	public void onInitialize() {
 		if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
 			PatheticDebugCommands.register();
+			PathfindingDebugMetrics.enable();
 		}
 		LOGGER.info("Pathetic Fabric pathfinding integration initialized.");
 	}

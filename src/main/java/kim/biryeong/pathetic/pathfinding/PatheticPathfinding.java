@@ -36,7 +36,7 @@ public final class PatheticPathfinding {
 			int maxPathLength
 	) {
 		FabricNavigationPointProvider provider = new FabricNavigationPointProvider();
-		FabricEnvironmentContext context = new FabricEnvironmentContext(region);
+		FabricEnvironmentContext context = new FabricEnvironmentContext(region, mob);
 		Path directPath = findDirectGroundPath(provider, context, mob.blockPosition(), target);
 		if (directPath != null) {
 			return directPath;
@@ -54,12 +54,12 @@ public final class PatheticPathfinding {
 				.maxIterations(100_000)
 				.maxLength(maxPathLength)
 				.neighborStrategy(HORIZONTAL_CARDINAL)
-				.nodeValidationProcessors(List.of(evaluation -> {
+				.validationProcessors(List.of(evaluation -> {
 					FabricNavigationPoint point =
 							provider.pointAt(evaluation.getCurrentPathPosition(), context);
 					return point.isTraversable();
 				}))
-				.nodeCostProcessors(List.of(evaluation -> {
+				.costProcessor(List.of(evaluation -> {
 					FabricNavigationPoint point =
 							provider.pointAt(evaluation.getCurrentPathPosition(), context);
 					return point.cost();
