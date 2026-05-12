@@ -1,10 +1,11 @@
 package kim.biryeong.pathetic.pathfinding;
 
-import de.bsommerfeld.pathetic.api.pathing.NeighborStrategies;
+import de.bsommerfeld.pathetic.api.pathing.INeighborStrategy;
 import de.bsommerfeld.pathetic.api.pathing.Pathfinder;
 import de.bsommerfeld.pathetic.api.pathing.configuration.PathfinderConfiguration;
 import de.bsommerfeld.pathetic.api.pathing.result.PathfinderResult;
 import de.bsommerfeld.pathetic.api.wrapper.PathPosition;
+import de.bsommerfeld.pathetic.api.wrapper.PathVector;
 import de.bsommerfeld.pathetic.engine.factory.AStarPathfinderFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,13 @@ import net.minecraft.world.level.pathfinder.Path;
 
 public final class PatheticPathfinding {
 	private static final AStarPathfinderFactory FACTORY = new AStarPathfinderFactory();
+	private static final List<PathVector> HORIZONTAL_CARDINAL_OFFSETS = List.of(
+			PathVector.of(1.0D, 0.0D, 0.0D),
+			PathVector.of(-1.0D, 0.0D, 0.0D),
+			PathVector.of(0.0D, 0.0D, 1.0D),
+			PathVector.of(0.0D, 0.0D, -1.0D)
+	);
+	private static final INeighborStrategy HORIZONTAL_CARDINAL = () -> HORIZONTAL_CARDINAL_OFFSETS;
 
 	private PatheticPathfinding() {
 	}
@@ -34,7 +42,7 @@ public final class PatheticPathfinding {
 				.fallback(false)
 				.maxIterations(100_000)
 				.maxLength(maxPathLength)
-				.neighborStrategy(NeighborStrategies.VERTICAL_AND_HORIZONTAL)
+				.neighborStrategy(HORIZONTAL_CARDINAL)
 				.nodeValidationProcessors(List.of(evaluation -> {
 					FabricNavigationPoint point =
 							provider.pointAt(evaluation.getCurrentPathPosition(), context);
