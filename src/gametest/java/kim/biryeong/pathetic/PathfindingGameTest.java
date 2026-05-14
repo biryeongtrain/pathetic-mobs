@@ -15,7 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.PathNavigationRegion;
 import net.minecraft.world.level.block.Blocks;
@@ -86,15 +85,15 @@ public class PathfindingGameTest {
 			fillPlatform(helper, 0, 0, 3, 3);
 			helper.setBlock(new BlockPos(1, 0, 1), Blocks.MAGMA_BLOCK);
 
-			Mob zombie = helper.spawn(EntityType.ZOMBIE, 0, 1, 0, EntitySpawnReason.TRIGGERED);
-			Mob warden = helper.spawn(EntityType.WARDEN, 3, 1, 3, EntitySpawnReason.TRIGGERED);
+			Mob zombie = helper.spawn(EntityType.ZOMBIE, 0, 1, 0);
+			Mob warden = helper.spawn(EntityType.WARDEN, 3, 1, 3);
 			helper.assertTrue(
-					zombie.getPathfindingMalus(PathType.FIRE) > 0.0F,
-					"Expected zombie to avoid direct fire damage path types."
+					zombie.getPathfindingMalus(PathType.DAMAGE_FIRE) > 0.0F,
+					Component.literal("Expected zombie to avoid direct fire damage path types.")
 			);
 			helper.assertTrue(
-					warden.getPathfindingMalus(PathType.FIRE) == 0.0F,
-					"Expected warden to ignore direct fire damage path types."
+					warden.getPathfindingMalus(PathType.DAMAGE_FIRE) == 0.0F,
+					Component.literal("Expected warden to ignore direct fire damage path types.")
 			);
 
 			PathNavigationRegion region = new PathNavigationRegion(
@@ -110,10 +109,10 @@ public class PathfindingGameTest {
 			FabricNavigationPoint wardenPoint = new FabricNavigationPointProvider()
 					.pointAt(samplePosition, new FabricEnvironmentContext(region, warden));
 
-			helper.assertTrue(zombiePoint.isTraversable(), "Expected zombie magma floor to stay traversable with a penalty.");
-			helper.assertTrue(zombiePoint.cost().value() > 0.0D, "Expected zombie magma floor to carry a penalty.");
-			helper.assertTrue(wardenPoint.isTraversable(), "Expected warden magma floor to stay traversable.");
-			helper.assertTrue(wardenPoint.cost().value() == 0.0D, "Expected warden magma floor penalty to be ignored.");
+			helper.assertTrue(zombiePoint.isTraversable(), Component.literal("Expected zombie magma floor to stay traversable with a penalty."));
+			helper.assertTrue(zombiePoint.cost().value() > 0.0D, Component.literal("Expected zombie magma floor to carry a penalty."));
+			helper.assertTrue(wardenPoint.isTraversable(), Component.literal("Expected warden magma floor to stay traversable."));
+			helper.assertTrue(wardenPoint.cost().value() == 0.0D, Component.literal("Expected warden magma floor penalty to be ignored."));
 			helper.succeed();
 		});
 	}
@@ -124,9 +123,9 @@ public class PathfindingGameTest {
 			fillPlatform(helper, 0, 0, 3, 3);
 			helper.setBlock(new BlockPos(1, 2, 1), Blocks.STONE);
 
-			Mob baby = helper.spawn(EntityType.ZOMBIE, 0, 1, 0, EntitySpawnReason.TRIGGERED);
+			Mob baby = helper.spawn(EntityType.ZOMBIE, 0, 1, 0);
 			baby.setBaby(true);
-			Mob adult = helper.spawn(EntityType.ZOMBIE, 3, 1, 3, EntitySpawnReason.TRIGGERED);
+			Mob adult = helper.spawn(EntityType.ZOMBIE, 3, 1, 3);
 
 			PathNavigationRegion region = region(helper, 0, 0, 0, 3, 4, 3);
 			PathPosition samplePosition = pathPosition(helper, 1, 1, 1);
@@ -135,10 +134,10 @@ public class PathfindingGameTest {
 			FabricNavigationPoint adultPoint = new FabricNavigationPointProvider()
 					.pointAt(samplePosition, new FabricEnvironmentContext(region, adult));
 
-			helper.assertTrue(baby.getBbHeight() < 1.0F, "Expected baby zombie to be shorter than one block.");
-			helper.assertTrue(adult.getBbHeight() > 1.0F, "Expected adult zombie to require head clearance.");
-			helper.assertTrue(babyPoint.isTraversable(), "Expected baby zombie to fit under one-block overhead clearance.");
-			helper.assertTrue(!adultPoint.isTraversable(), "Expected adult zombie to be blocked by head-level stone.");
+			helper.assertTrue(baby.getBbHeight() < 1.0F, Component.literal("Expected baby zombie to be shorter than one block."));
+			helper.assertTrue(adult.getBbHeight() > 1.0F, Component.literal("Expected adult zombie to require head clearance."));
+			helper.assertTrue(babyPoint.isTraversable(), Component.literal("Expected baby zombie to fit under one-block overhead clearance."));
+			helper.assertTrue(!adultPoint.isTraversable(), Component.literal("Expected adult zombie to be blocked by head-level stone."));
 			helper.succeed();
 		});
 	}
@@ -149,8 +148,8 @@ public class PathfindingGameTest {
 			fillPlatform(helper, 0, 0, 5, 5);
 			helper.setBlock(new BlockPos(3, 1, 2), Blocks.STONE);
 
-			Mob golem = helper.spawn(EntityType.IRON_GOLEM, 0, 1, 0, EntitySpawnReason.TRIGGERED);
-			Mob zombie = helper.spawn(EntityType.ZOMBIE, 5, 1, 5, EntitySpawnReason.TRIGGERED);
+			Mob golem = helper.spawn(EntityType.IRON_GOLEM, 0, 1, 0);
+			Mob zombie = helper.spawn(EntityType.ZOMBIE, 5, 1, 5);
 
 			PathNavigationRegion region = region(helper, 0, 0, 0, 5, 5, 5);
 			PathPosition samplePosition = pathPosition(helper, 2, 1, 2);
@@ -159,10 +158,10 @@ public class PathfindingGameTest {
 			FabricNavigationPoint zombiePoint = new FabricNavigationPointProvider()
 					.pointAt(samplePosition, new FabricEnvironmentContext(region, zombie));
 
-			helper.assertTrue(golem.getBbWidth() > 1.0F, "Expected iron golem to require a wider footprint.");
-			helper.assertTrue(golem.getBbHeight() > 2.0F, "Expected iron golem to require more than two vertical blocks.");
-			helper.assertTrue(!golemPoint.isTraversable(), "Expected iron golem to be blocked by side-footprint stone.");
-			helper.assertTrue(zombiePoint.isTraversable(), "Expected normal zombie to ignore side-footprint stone at this point.");
+			helper.assertTrue(golem.getBbWidth() > 1.0F, Component.literal("Expected iron golem to require a wider footprint."));
+			helper.assertTrue(golem.getBbHeight() > 2.0F, Component.literal("Expected iron golem to require more than two vertical blocks."));
+			helper.assertTrue(!golemPoint.isTraversable(), Component.literal("Expected iron golem to be blocked by side-footprint stone."));
+			helper.assertTrue(zombiePoint.isTraversable(), Component.literal("Expected normal zombie to ignore side-footprint stone at this point."));
 			helper.succeed();
 		});
 	}
